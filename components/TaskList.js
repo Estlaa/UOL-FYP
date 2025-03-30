@@ -7,6 +7,7 @@ import { ref, deleteObject } from "firebase/storage";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import Colors from "../themes/Colors.js";
 import { cancelTaskNotification } from "./NotificationManager.js";
+import { updateTasksCompleted } from "./AchievementManager.js";
 
 export default function TaskList({ navigation, tasks }) {
 
@@ -17,6 +18,7 @@ export default function TaskList({ navigation, tasks }) {
       await updateDoc(doc(db, 'users', userId, "tasks", id), {
         completed: !currentStatus,
       });
+      updateTasksCompleted().catch(err => console.error("Error updating tasks completed:", err));
     } catch (error) {
       console.error('Error updating task status:', error.message);
     }

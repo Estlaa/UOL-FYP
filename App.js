@@ -16,6 +16,7 @@ import AddTask from "./screens/AddTask";
 import TimerScreen from "./screens/TimerScreen";
 import CalendarScreen from "./screens/CalendarScreen";
 import SearchScreen from "./screens/SearchScreen";
+import AchievementScreen from "./screens/AchievementScreen";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -69,7 +70,7 @@ function BottomTabs() {
       <Tab.Screen name="Calendar" component={CalendarScreen} />
       <Tab.Screen name="Search" component={SearchScreen} />
       <Tab.Screen name="Pomodoro Timer" component={TimerScreen} />
-      <Tab.Screen name="Achievements" component={TaskScreen} />
+      <Tab.Screen name="Achievements" component={AchievementScreen} />
 
     </Tab.Navigator>
   );

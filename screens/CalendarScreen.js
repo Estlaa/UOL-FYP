@@ -218,6 +218,7 @@ export default function CalendarScreen({ navigation }) {
         minDate={minDate}
         maxDate={maxDate}
         selected={selectedDate}
+        showClosingKnob={true}
         renderItem={renderItem}
         renderEmptyDate={renderEmptyDate}
         theme={{

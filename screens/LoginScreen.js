@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, Button, StyleSheet, TextInput, Alert,TouchableOpacity } from "react-native";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import Colors from "../themes/Colors";
+import { checkLoginAchievements,updateLoginStreak } from "../components/AchievementManager";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -9,8 +10,12 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = () => {
     const auth = getAuth();
     signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
+      .then(async(userCredential) => {
         console.log("User signed in:", userCredential.user);
+        // Update the login streak and get the current streak value.
+        const currentLoginStreak = await updateLoginStreak();
+        // Check if any login achievements should be unlocked.
+        await checkLoginAchievements(currentLoginStreak);
       })
       .catch((error) => {
         console.error("Error signing in:", error.message);

@@ -4,11 +4,12 @@ import Colors from "../themes/Colors";
 
 // Fixed list of categories
 export const fixedCategories = [
-  { id: "1", name: "Work" },
-  { id: "2", name: "Personal" },
-  { id: "3", name: "Shopping" },
-  { id: "4", name: "Health" },
-  { id: "5", name: "Finance" },
+  { id:"1",name: "None"},
+  { id: "2", name: "Work" },
+  { id: "3", name: "School" },
+  { id: "4", name: "Shopping" },
+  { id: "5", name: "Sport" },
+  { id: "6", name: "Personal" },
 ];
 
 export default function CategoryModal({ visible, onSelect, onClose }) {

@@ -24,7 +24,7 @@ export default function AddTask({ navigation, route }) {
       ? parse(taskToEdit.dueDate, "MMM dd, yyyy", new Date())
       : new Date()
   );
-  const [category, setCategory] = useState(taskToEdit ? taskToEdit.category : "");
+  const [category, setCategory] = useState(taskToEdit ? taskToEdit.category : "None");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
