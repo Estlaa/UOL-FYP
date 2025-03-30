@@ -1,16 +1,23 @@
 import React, { useState } from "react";
 import { parse } from "date-fns";
-import {View,Text,TextInput,TouchableOpacity,TouchableWithoutFeedback,Keyboard,Alert,StyleSheet,ActivityIndicator,} from "react-native";
+import {View,Text,TextInput,TouchableOpacity,TouchableWithoutFeedback,Keyboard,Alert,StyleSheet,ActivityIndicator,ScrollView,} from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { collection, addDoc, Timestamp, updateDoc, doc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { storage } from "../firebaseConfig";
 import { auth, db } from "../firebaseConfig";
-import { scheduleTaskNotification, updateTaskNotification, cancelTaskNotification } from '../components/NotificationManager';
+import {scheduleTaskNotification,updateTaskNotification,cancelTaskNotification,} from "../components/NotificationManager";
 import Colors from "../themes/Colors";
 import CategoryModal from "../components/CategoryModal";
 import ImagePickerComponent from "../components/ImagePicker";
+import DocumentPickerComponent from "../components/DocumentPicker";
+
+// Helper function to generate a storage path from a URI.
+const getStoragePathFromUri = (uri) => {
+  const filename = uri.substring(uri.lastIndexOf("/") + 1);
+  return `tasks/${filename}`;
+};
 
 export default function AddTask({ navigation, route }) {
   console.log(route.params);
@@ -29,10 +36,13 @@ export default function AddTask({ navigation, route }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
-
-  // store the original images from the task (if editing) for later comparison.
+  // Images state and original images for comparison.
   const [images, setImages] = useState(taskToEdit ? taskToEdit.images : []);
   const originalImages = taskToEdit ? taskToEdit.images : [];
+
+  // Files state and original files for comparison.
+  const [files, setFiles] = useState(taskToEdit ? taskToEdit.files : []);
+  const originalFiles = taskToEdit ? taskToEdit.files : [];
 
   // Function to upload images and get their download URLs.
   const uploadImages = async (images) => {
@@ -49,7 +59,22 @@ export default function AddTask({ navigation, route }) {
     return uploadedImages;
   };
 
-  // Function to add or update task 
+  // Function to upload files and get their download URLs.
+  const uploadFiles = async (files) => {
+    const uploadedFiles = [];
+    for (const file of files) {
+      const { uri, path, name } = file;
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+      uploadedFiles.push({ uri: downloadURL, path, name });
+    }
+    return uploadedFiles;
+  };
+
+  // Function to add or update task.
   const handleTask = async () => {
     if (!title.trim()) {
       Alert.alert("Error", "Title is required.");
@@ -80,8 +105,25 @@ export default function AddTask({ navigation, route }) {
         }
       }
 
+      // If editing, remove files that are no longer used.
+      if (taskToEdit) {
+        const removedFiles = originalFiles.filter(
+          (originalFile) => !files.some((newFile) => newFile.uri === originalFile.uri)
+        );
+        for (const file of removedFiles) {
+          try {
+            const fileRef = ref(storage, file.path);
+            await deleteObject(fileRef);
+            console.log(`Deleted file from storage: ${file.path}`);
+          } catch (error) {
+            console.warn(`Failed to delete file from storage: ${file.path}`, error);
+          }
+        }
+      }
 
+      // Upload images and files.
       const uploadedImageObjects = await uploadImages(images);
+      const uploadedFileObjects = await uploadFiles(files);
 
       // If editing, update the task and its notification.
       if (taskToEdit) {
@@ -100,6 +142,7 @@ export default function AddTask({ navigation, route }) {
           dueDate: Timestamp.fromDate(dueDate),
           category,
           images: uploadedImageObjects,
+          files: uploadedFileObjects,
           notificationId: newNotificationId,
         });
         Alert.alert("Success", "Task updated successfully!");
@@ -116,6 +159,7 @@ export default function AddTask({ navigation, route }) {
           category,
           completed: false,
           images: uploadedImageObjects,
+          files: uploadedFileObjects,
           notificationId,
         });
         Alert.alert("Success", "Task added successfully!");
@@ -130,7 +174,10 @@ export default function AddTask({ navigation, route }) {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.label}>Title</Text>
         <TextInput
           style={styles.input}
@@ -198,6 +245,8 @@ export default function AddTask({ navigation, route }) {
 
         <ImagePickerComponent images={images} setImages={setImages} />
 
+        <DocumentPickerComponent files={files} setFiles={setFiles} />
+
         <TouchableOpacity style={styles.createButton} onPress={handleTask}>
           <Text style={styles.createButtonText}>
             {taskToEdit ? "Update Task" : "Add Task"}
@@ -209,17 +258,15 @@ export default function AddTask({ navigation, route }) {
             <ActivityIndicator size="large" color={Colors.primary} />
           </View>
         )}
-      </View>
+      </ScrollView>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 20,
     backgroundColor: "white",
-    position: "relative",
   },
   label: {
     fontSize: 16,

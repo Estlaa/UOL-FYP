@@ -35,14 +35,14 @@ export default function TaskList({ navigation, tasks }) {
           onPress: async () => {
             try {
               const userId = auth.currentUser?.uid;
-
+  
               // Cancel the scheduled notification if it exists.
               if (task.notificationId) {
                 await cancelTaskNotification(task.notificationId);
                 console.log(`Cancelled notification: ${task.notificationId}`);
               }
-
-              // If the task has images, delete each one from Firebase Storage.
+  
+              // If the task has images, delete all from Firebase Storage.
               if (task.images && task.images.length > 0) {
                 for (const image of task.images) {
                   try {
@@ -54,7 +54,20 @@ export default function TaskList({ navigation, tasks }) {
                   }
                 }
               }
-
+  
+              // If the task has files, delete all from Firebase Storage.
+              if (task.files && task.files.length > 0) {
+                for (const file of task.files) {
+                  try {
+                    const fileRef = ref(storage, file.path);
+                    await deleteObject(fileRef);
+                    console.log(`Deleted file from storage: ${file.path}`);
+                  } catch (error) {
+                    console.error(`Error deleting file (${file.path}):`, error.message);
+                  }
+                }
+              }
+  
               // Delete the task document.
               await deleteDoc(doc(db, 'users', userId, "tasks", task.id));
               console.log('Task successfully deleted');
