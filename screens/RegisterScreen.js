@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { View, Text, Button, StyleSheet, TextInput } from "react-native";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
-import { auth, db } from "../firebaseConfig.js"
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from "react-native";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../firebaseConfig.js";
+import Colors from "../themes/Colors.js";
 
 export default function RegisterScreen({ navigation }) {
   const [username, setUsername] = useState("");
@@ -14,13 +15,22 @@ export default function RegisterScreen({ navigation }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const userId = userCredential.user.uid;
 
-      // Save user data (username and email) to Firestore under 'users' collection
+      // Save basic user data in the "users" collection.
       await setDoc(doc(db, "users", userId), {
         username,
         email,
       });
 
-      console.log("User registered and data saved in Firestore.");
+      // Create a subcollection "achievements" under the user document with a default document "stats".
+      await setDoc(doc(db, "users", userId, "achievements", "stats"), {
+        lastLogin: new Date().toISOString(),
+        loginStreak: 0,
+        tasksCompleted: 0,
+      });
+
+      console.log("User registered with default achievements saved in Firestore.");
+      // Optionally, navigate to the next screen
+      // navigation.navigate('SomeOtherScreen');
     } catch (error) {
       console.error("Error signing up:", error.message);
     }
@@ -28,18 +38,12 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-
-      {/* Username Input */}
-      <Text>Username</Text>
       <TextInput
         style={styles.input}
         placeholder="Enter your username"
         value={username}
         onChangeText={setUsername}
       />
-
-      {/* Email Input */}
-      <Text>Email</Text>
       <TextInput
         style={styles.input}
         placeholder="Enter your email"
@@ -47,9 +51,6 @@ export default function RegisterScreen({ navigation }) {
         value={email}
         onChangeText={setEmail}
       />
-
-      {/* Password Input */}
-      <Text>Password</Text>
       <TextInput
         style={styles.input}
         placeholder="Enter your password"
@@ -57,13 +58,9 @@ export default function RegisterScreen({ navigation }) {
         value={password}
         onChangeText={setPassword}
       />
-
-      {/* Signup Button */}
-      <Button title="Signup" onPress={handleRegistration} />
-      <Button
-        title="Go to Login"
-        onPress={() => navigation.navigate("Login")}
-      />
+      <TouchableOpacity style={styles.btn} onPress={handleRegistration}>
+        <Text style={styles.btnText}>Sign up</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -76,18 +73,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#f0f4f7",
   },
-  heading: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
   input: {
     width: "100%",
     padding: 15,
-    marginVertical: 10,
-    borderWidth: 1,
-    borderColor: "#ccc",
+    marginVertical: 8,
     borderRadius: 10,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.secondary,
+  },
+  btn: {
+    width: "100%",
+    backgroundColor: Colors.primary,
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 8,
+  },
+  btnText: {
+    color: "white",
+    fontSize: 16,
+    textAlign: "center",
   },
 });

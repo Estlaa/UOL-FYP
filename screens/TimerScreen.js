@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput } from 'react-native';
-
-const { width } = Dimensions.get('window');
+import ProgressCircle from 'react-native-progress/Circle';
+import Colors from '../themes/Colors';
 
 const TimerScreen = () => {
   const [workDuration, setWorkDuration] = useState(25 * 60); // 25 minutes in seconds
@@ -12,7 +12,6 @@ const TimerScreen = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [currentCycle, setCurrentCycle] = useState(1);
 
-  // Input states for customization
   const [inputWorkDuration, setInputWorkDuration] = useState('25');
   const [inputBreakDuration, setInputBreakDuration] = useState('5');
   const [inputCycles, setInputCycles] = useState('4');
@@ -82,11 +81,27 @@ const TimerScreen = () => {
     return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
+  // Calculate progress for the current session (work or break)
+  const progress = timeLeft / (isWorking ? workDuration : breakDuration);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{isWorking ? 'Work Time' : 'Break Time'}</Text>
       <Text style={styles.cycleText}>Cycle: {currentCycle} of {cycles}</Text>
-      <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+      
+      <View style={styles.timerContainer}>
+        <ProgressCircle
+          progress={progress}
+          size={200}
+          thickness={10}
+          showsText={false}
+          color={Colors.primary}
+          unfilledColor="#e6e6e6"
+          borderWidth={0}
+        />
+        <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+      </View>
+
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button} onPress={isRunning ? pauseTimer : startTimer}>
           <Text style={styles.buttonText}>{isRunning ? 'Pause' : 'Start'}</Text>
@@ -139,7 +154,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: 'white',
     padding: 20,
   },
   title: {
@@ -151,10 +166,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 20,
   },
+  timerContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   timerText: {
     fontSize: 48,
     fontWeight: 'bold',
-    marginBottom: 20,
+    position: 'absolute',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -163,7 +183,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   button: {
-    backgroundColor: '#333',
+    backgroundColor: Colors.primary,
     padding: 15,
     borderRadius: 10,
     width: '40%',
@@ -195,7 +215,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   applyButton: {
-    backgroundColor: '#333',
+    backgroundColor: Colors.primary,
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',

@@ -1,28 +1,62 @@
 import React, { useState } from "react";
 import { parse } from "date-fns";
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import {View,Text,TextInput,TouchableOpacity,TouchableWithoutFeedback,Keyboard,Alert,StyleSheet,ActivityIndicator,} from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { collection, addDoc, Timestamp,updateDoc,doc } from "firebase/firestore";
+import { collection, addDoc, Timestamp, updateDoc, doc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { storage } from "../firebaseConfig";
 import { auth, db } from "../firebaseConfig";
+import { scheduleTaskNotification, updateTaskNotification, cancelTaskNotification } from '../components/NotificationManager';
+import Colors from "../themes/Colors";
+import CategoryModal from "../components/CategoryModal";
+import ImagePickerComponent from "../components/ImagePicker";
 
-export default function AddTask({ navigation,route }) {
+export default function AddTask({ navigation, route }) {
   console.log(route.params);
   const taskToEdit = route.params?.taskToEdit || null;
 
   const [title, setTitle] = useState(taskToEdit ? taskToEdit.title : "");
   const [description, setDescription] = useState(taskToEdit ? taskToEdit.description : "");
   const [priority, setPriority] = useState(taskToEdit ? taskToEdit.priority : "low");
-  const [dueDate, setDueDate] = useState(taskToEdit?.dueDate? parse(taskToEdit.dueDate, "MMM dd, yyyy", new Date()): new Date());
+  const [dueDate, setDueDate] = useState(
+    taskToEdit?.dueDate
+      ? parse(taskToEdit.dueDate, "MMM dd, yyyy", new Date())
+      : new Date()
+  );
+  const [category, setCategory] = useState(taskToEdit ? taskToEdit.category : "");
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  //function to add task to firebase
+
+  // store the original images from the task (if editing) for later comparison.
+  const [images, setImages] = useState(taskToEdit ? taskToEdit.images : []);
+  const originalImages = taskToEdit ? taskToEdit.images : [];
+
+  // Function to upload images and get their download URLs.
+  const uploadImages = async (images) => {
+    const uploadedImages = [];
+    for (const image of images) {
+      const { uri, path } = image;
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+      uploadedImages.push({ uri: downloadURL, path });
+    }
+    return uploadedImages;
+  };
+
+  // Function to add or update task 
   const handleTask = async () => {
     if (!title.trim()) {
       Alert.alert("Error", "Title is required.");
       return;
     }
 
+    setLoading(true);
     try {
       const userId = auth.currentUser?.uid;
       if (!userId) {
@@ -30,93 +64,153 @@ export default function AddTask({ navigation,route }) {
         return;
       }
 
-      const tasksRef = collection(db, "users", userId, "tasks");
-
+      // If editing, remove images that are no longer used.
       if (taskToEdit) {
-        // If editing, update the existing task
-        const taskEdit = doc(db, "users", userId, "tasks", taskToEdit.id);
-        await updateDoc(taskEdit, {
+        const removedImages = originalImages.filter(
+          (originalImg) => !images.some((newImg) => newImg.uri === originalImg.uri)
+        );
+        for (const image of removedImages) {
+          try {
+            const imageRef = ref(storage, image.path);
+            await deleteObject(imageRef);
+            console.log(`Deleted image from storage: ${image.path}`);
+          } catch (error) {
+            console.warn(`Failed to delete image from storage: ${image.path}`, error);
+          }
+        }
+      }
+
+
+      const uploadedImageObjects = await uploadImages(images);
+
+      // If editing, update the task and its notification.
+      if (taskToEdit) {
+        const taskEditRef = doc(db, "users", userId, "tasks", taskToEdit.id);
+        // Update the notification: cancel the old one and schedule a new one.
+        const newNotificationId = await updateTaskNotification(
+          taskToEdit.notificationId,
+          title,
+          dueDate
+        );
+
+        await updateDoc(taskEditRef, {
           title,
           description,
           priority,
           dueDate: Timestamp.fromDate(dueDate),
+          category,
+          images: uploadedImageObjects,
+          notificationId: newNotificationId,
         });
-
         Alert.alert("Success", "Task updated successfully!");
+      } else {
+        // For a new task, schedule a new notification.
+        const tasksRef = collection(db, "users", userId, "tasks");
+        const notificationId = await scheduleTaskNotification(title, dueDate);
+
+        await addDoc(tasksRef, {
+          title,
+          description,
+          priority,
+          dueDate: Timestamp.fromDate(dueDate),
+          category,
+          completed: false,
+          images: uploadedImageObjects,
+          notificationId,
+        });
+        Alert.alert("Success", "Task added successfully!");
       }
-
-      else {await addDoc(tasksRef, {
-        title,
-        description,
-        priority,
-        dueDate: Timestamp.fromDate(dueDate),
-        completed:false,
-      });
-
-      Alert.alert("Success", "Task added successfully!");
-    }
-      navigation.goBack(); 
+      navigation.goBack();
     } catch (error) {
       Alert.alert("Error", error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Title</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter task title"
-        value={title}
-        onChangeText={setTitle}
-      />
-
-      <Text style={styles.label}>Description</Text>
-      <TextInput
-        style={[styles.input, { height: 80 }]}
-        placeholder="Enter task description"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-      />
-
-      <Text style={styles.label}>Priority</Text>
-      <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={priority}
-          onValueChange={(itemValue) => setPriority(itemValue)}
-        >
-          <Picker.Item label="Urgent" value="urgent" />
-          <Picker.Item label="High" value="high" />
-          <Picker.Item label="Medium" value="medium" />
-          <Picker.Item label="Low" value="low" />
-        </Picker>
-      </View>
-
-      <Text style={styles.label}>Due Date</Text>
-      <TouchableOpacity
-        style={styles.dateButton}
-        onPress={() => setShowDatePicker(true)}
-      >
-        <Text>{dueDate.toDateString()}</Text>
-      </TouchableOpacity>
-
-      {showDatePicker && (
-        <DateTimePicker
-          value={dueDate}
-          mode="date"
-          display="default"
-          onChange={(event, selectedDate) => {
-            setShowDatePicker(false);
-            if (selectedDate) {
-              setDueDate(selectedDate);
-            }
-          }}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <Text style={styles.label}>Title</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter task title"
+          value={title}
+          onChangeText={setTitle}
         />
-      )}
 
-      <Button title={taskToEdit ? "Update Task":"Add Task"} onPress={handleTask} />
-    </View>
+        <Text style={styles.label}>Description</Text>
+        <TextInput
+          style={[styles.input, { height: 80 }]}
+          placeholder="Enter task description"
+          value={description}
+          onChangeText={setDescription}
+          multiline
+        />
+
+        <Text style={styles.label}>Priority</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={priority}
+            onValueChange={(itemValue) => setPriority(itemValue)}
+          >
+            <Picker.Item label="High" value="high" />
+            <Picker.Item label="Medium" value="medium" />
+            <Picker.Item label="Low" value="low" />
+          </Picker>
+        </View>
+
+        <Text style={styles.label}>Due Date</Text>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text>{dueDate.toDateString()}</Text>
+        </TouchableOpacity>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={dueDate}
+            mode="date"
+            display="default"
+            onChange={(event, selectedDate) => {
+              setShowDatePicker(false);
+              if (selectedDate) {
+                setDueDate(selectedDate);
+              }
+            }}
+          />
+        )}
+
+        <Text style={styles.label}>Category</Text>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setModalVisible(true)}
+        >
+          <Text>{category || "Select Category"}</Text>
+        </TouchableOpacity>
+
+        <CategoryModal
+          visible={modalVisible}
+          onSelect={(selectedCategory) => setCategory(selectedCategory)}
+          onClose={() => setModalVisible(false)}
+        />
+
+        <ImagePickerComponent images={images} setImages={setImages} />
+
+        <TouchableOpacity style={styles.createButton} onPress={handleTask}>
+          <Text style={styles.createButtonText}>
+            {taskToEdit ? "Update Task" : "Add Task"}
+          </Text>
+        </TouchableOpacity>
+
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+          </View>
+        )}
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -124,7 +218,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "white",
+    position: "relative",
   },
   label: {
     fontSize: 16,
@@ -137,7 +232,7 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 16,
     borderRadius: 6,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.secondary,
     marginBottom: 20,
   },
   pickerContainer: {
@@ -145,15 +240,38 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     borderRadius: 6,
     marginBottom: 20,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.secondary,
   },
   dateButton: {
     borderWidth: 1,
     borderColor: "#ddd",
     padding: 10,
     borderRadius: 6,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.secondary,
     alignItems: "center",
     marginBottom: 20,
+  },
+  createButton: {
+    width: "100%",
+    backgroundColor: Colors.primary,
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 8,
+  },
+  createButtonText: {
+    color: "white",
+    fontSize: 16,
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, Button, StyleSheet, TextInput, Alert } from "react-native";
+import { View, Text, Button, StyleSheet, TextInput, Alert,TouchableOpacity } from "react-native";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import Colors from "../themes/Colors";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -18,40 +19,65 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+    <View style={styles.container}>
       {/* Email Input */}
-      <Text>Email</Text>
       <TextInput
         style={styles.input}
-        placeholder="Enter your email"
+        placeholder="Email"
         keyboardType="email-address"
         value={email}
         onChangeText={setEmail}
       />
 
       {/* Password Input */}
-      <Text>Password</Text>
       <TextInput
         style={styles.input}
-        placeholder="Enter your password"
+        placeholder="Password"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
-      <Button title="Login" onPress={handleLogin} />
-      <Button title="Go to Signup" onPress={() => navigation.navigate("Register")} />
+
+      <TouchableOpacity style={styles.btn} onPress={handleLogin}>
+          <Text style={styles.btnText}>Sign in</Text>
+      </TouchableOpacity>
+      <Text style={{marginTop:16,fontSize:14,fontWeight: 'bold'}}>
+        Don't have an account?
+      </Text>
+      <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate("Register")} >
+          <Text style={styles.btnText}>Sign up</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container:{
+    flex:1,
+    justifyContent:'center',
+    alignItems:'center',
+    marginHorizontal:16,
+  },
   input: {
     width: "100%",
     padding: 15,
-    marginVertical: 10,
+    marginVertical: 4,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 10,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.secondary,
+  },
+  btn:{
+    width:"100%",
+    backgroundColor: Colors.primary,
+    padding:15,
+    borderRadius:10,
+    marginTop:8
+  },
+  btnText:{
+    color:"white",
+    fontSize:16,
+    textAlign:'center',
+    fontWeight: 'bold'
   },
 });
