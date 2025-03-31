@@ -35,7 +35,7 @@ const ImagePickerComponent = ({ images, setImages }) => {
       } else {
         setImages([
           ...images,
-          { 
+          {
             uri: result.uri,
             path: getStoragePathFromUri(result.uri),
           }
@@ -59,7 +59,7 @@ const ImagePickerComponent = ({ images, setImages }) => {
       const asset = result.assets[0];
       setImages([
         ...images,
-        { 
+        {
           uri: asset.uri,
           path: getStoragePathFromUri(asset.uri),
         }
@@ -72,7 +72,7 @@ const ImagePickerComponent = ({ images, setImages }) => {
     setModalVisible(true);
   };
 
-  // Remove image from UI only.
+  // Remove image 
   const handleRemoveImage = (imageToRemove) => {
     const updatedImages = images.filter(image => image.uri !== imageToRemove.uri);
     setImages(updatedImages);
@@ -101,7 +101,6 @@ const ImagePickerComponent = ({ images, setImages }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header row with "Images" label and photo attachment icon */}
       <View style={styles.headerRow}>
         <Text style={styles.headerText}>Images</Text>
         <TouchableOpacity onPress={handleSelectImages}>
@@ -117,32 +116,31 @@ const ImagePickerComponent = ({ images, setImages }) => {
         style={styles.previewList}
       />
 
-      {/* Modal for selecting photo source */}
       <Modal
         visible={modalVisible}
         animationType="slide"
         transparent
         onRequestClose={() => setModalVisible(false)}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
           onPressOut={() => setModalVisible(false)}
         >
           <View style={styles.modalContent}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.modalOption}
               onPress={() => { setModalVisible(false); pickFromCamera(); }}
             >
               <Text style={styles.modalOptionText}>Camera</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.modalOption}
               onPress={() => { setModalVisible(false); pickFromGallery(); }}
             >
               <Text style={styles.modalOptionText}>Gallery</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.modalOption}
               onPress={() => setModalVisible(false)}
             >
@@ -152,24 +150,23 @@ const ImagePickerComponent = ({ images, setImages }) => {
         </TouchableOpacity>
       </Modal>
 
-      {/* Modal for image preview */}
       <Modal
         visible={previewModalVisible}
         animationType="fade"
         transparent
         onRequestClose={() => setPreviewModalVisible(false)}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.previewModalOverlay}
           activeOpacity={1}
           onPressOut={() => setPreviewModalVisible(false)}
         >
           <View style={styles.previewModalContent}>
             {previewImage && (
-              <Image 
-                source={{ uri: previewImage.uri }} 
-                style={styles.previewModalImage} 
-                resizeMode="contain" 
+              <Image
+                source={{ uri: previewImage.uri }}
+                style={styles.previewModalImage}
+                resizeMode="contain"
               />
             )}
           </View>

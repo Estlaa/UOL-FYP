@@ -28,7 +28,7 @@ const DocumentPickerComponent = ({ files, setFiles }) => {
         ],
       });
       console.log(result);
-      // Check the "canceled" property (not "cancelled")
+      // Check the "canceled" property
       if (!result.canceled) {
         if (result.assets) {
           // Map each asset to an object with uri, name, and storage path.
@@ -60,7 +60,6 @@ const DocumentPickerComponent = ({ files, setFiles }) => {
     setFiles(updatedFiles);
   };
 
-  // Render each file as a small card with the file name and a remove button
   const renderItem = ({ item }) => (
     <View style={styles.fileContainer}>
       <Text style={styles.fileName} numberOfLines={1}>
@@ -74,7 +73,6 @@ const DocumentPickerComponent = ({ files, setFiles }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header row with "Documents" label and attachment icon */}
       <View style={styles.headerRow}>
         <Text style={styles.headerText}>Documents</Text>
         <TouchableOpacity onPress={pickDocument}>

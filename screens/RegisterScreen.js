@@ -21,7 +21,6 @@ export default function RegisterScreen({ navigation }) {
         email,
       });
 
-      // Create a subcollection "achievements" under the user document with a default document "stats".
       await setDoc(doc(db, "users", userId, "achievements", "stats"), {
         lastLogin: new Date().toISOString(),
         loginStreak: 0,

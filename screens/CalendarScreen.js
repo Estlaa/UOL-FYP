@@ -6,7 +6,7 @@ import { collection, onSnapshot, updateDoc, deleteDoc, doc } from "firebase/fire
 import { auth, db, storage } from "../firebaseConfig.js";
 import { ref, deleteObject } from "firebase/storage";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
-import AntDesign from "react-native-vector-icons/AntDesign";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import Colors from "../themes/Colors";
 import { format } from "date-fns";
 
@@ -181,10 +181,10 @@ export default function CalendarScreen({ navigation }) {
             style={{ marginHorizontal: 20 }}
             onPress={() => navigation.navigate("Add Task", { taskToEdit: item })}
           >
-            <AntDesign name="edit" size={20} color={Colors.primary} />
+            <Ionicons name="create-outline" size={20} color={Colors.primary} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleDeleteTask(item)}>
-            <AntDesign name="delete" size={20} color="red" />
+            <Ionicons name="trash-outline" size={20} color="red" />
           </TouchableOpacity>
         </View>
       </View>
@@ -227,7 +227,6 @@ export default function CalendarScreen({ navigation }) {
         }}
       />
 
-      {/* If you want a brief overlay while items are updating, you can do: */}
       {loading && tasks.length > 0 && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={Colors.primary} />
