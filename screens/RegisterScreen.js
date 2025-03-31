@@ -29,8 +29,6 @@ export default function RegisterScreen({ navigation }) {
       });
 
       console.log("User registered with default achievements saved in Firestore.");
-      // Optionally, navigate to the next screen
-      // navigation.navigate('SomeOtherScreen');
     } catch (error) {
       console.error("Error signing up:", error.message);
     }

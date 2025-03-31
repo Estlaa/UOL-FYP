@@ -13,7 +13,6 @@ import CategoryModal from "../components/CategoryModal";
 import ImagePickerComponent from "../components/ImagePicker";
 import DocumentPickerComponent from "../components/DocumentPicker";
 
-// Helper function to generate a storage path from a URI.
 const getStoragePathFromUri = (uri) => {
   const filename = uri.substring(uri.lastIndexOf("/") + 1);
   return `tasks/${filename}`;

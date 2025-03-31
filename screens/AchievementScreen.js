@@ -5,9 +5,9 @@ import { auth, db } from "../firebaseConfig";
 import Colors from "../themes/Colors";
 import { achievementsData } from "../components/AchievementManager";
 
-// Calculate a card width that fits two cards per row with some margin.
+
 const { width } = Dimensions.get("window");
-const CARD_WIDTH = (width / 2) - 24; // half screen minus margins
+const CARD_WIDTH = (width / 2) - 24; 
 
 export default function AchievementScreen() {
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
@@ -38,7 +38,7 @@ export default function AchievementScreen() {
     unlocked: unlockedAchievements.includes(achievement.id),
   }));
 
-  // Map tiers to medal images
+
   const medalImages = {
     bronze: require("../assets/bronze.png"),
     silver: require("../assets/silver.png"),
