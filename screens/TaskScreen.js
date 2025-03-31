@@ -99,7 +99,6 @@ export default function TaskScreen({ navigation }) {
     );
   }
 
-  // Use filteredTasks (instead of tasks) to create your sections
   const today = startOfToday();
 
   const overdueTasks = filteredTasks.filter((task) => {
